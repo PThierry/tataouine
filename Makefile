@@ -200,10 +200,10 @@ layout: $(MEM_LAYOUT_DEF)
 # make prepare and make menuconfig to create the
 # .config file.
 
-.PHONY: libs drivers prepare loader prove externals $(APPS) $(APPS_PATHS) $(BUILD_LIBECC_DIR) $(BUILD_DIR)
+.PHONY: libs drivers prepare loader prove $(APPS) $(APPS_PATHS) $(BUILD_LIBECC_DIR) $(BUILD_DIR)
 
 
-applet: externals
+applet: externals_java externals_libs
 	$(Q)$(MAKE) -C javacard $@
 
 $(BUILD_DIR)/kernel/kernel.fw1.hex: $(BUILD_DIR)/apps/.apps_done
@@ -271,9 +271,9 @@ prove:
 # from all elf, finalize into one single binary file
 $(BUILD_DIR)/loader/loader.hex: libs loader
 
-$(APPS_FW1_HEXFILES): layout externals libs drivers $(APPS)
+$(APPS_FW1_HEXFILES): layout externals_libs libs drivers $(APPS)
 
-$(APPS_FW2_HEXFILES): layout externals libs drivers $(APPS)
+$(APPS_FW2_HEXFILES): layout externals_libs libs drivers $(APPS)
 
 libs:
 	$(Q)$(MAKE) -C libs all
@@ -803,8 +803,11 @@ javacard_push: javacard_push_auth javacard_push_dfu
 endif
 
 
-javacard: externals javacard_compile javacard_push
+javacard: externals_java javacard_compile javacard_push
 
-externals:
-	@make -C $@ all
+externals_java:
+	@make -C externals java
+
+externals_libs:
+	@make -C externals libs
 
