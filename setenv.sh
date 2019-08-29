@@ -22,7 +22,7 @@ export WOOKEY_ENV=true
 # Setting this directory *does not* means that you can avoid adding the bin/ subdir
 # of the Ada toolchain to you PATH. This is a required action.
 
-export ADA_RUNTIME="/opt/adacore-arm-eabi"
+export ADA_RUNTIME=$(dirname $(dirname $(which arm-eabi-gnat)))
 
 # 3) This is the path (including the name) of the st-flash tool. This tool
 # is used to flash STM32 boards. Setting this path is not required as you
@@ -105,3 +105,8 @@ echo "  CLANG_PATH    = $CLANG_PATH"
 echo " *JAVA_SC_SDK   = $JAVA_SC_SDK"
 echo
 echo "========================================================="
+
+if test -z "$ADA_RUNTIME"; then
+    echo "Invalid ADA_RUNTIME! Please check that your Ada toolchain binaries are in your PATH"
+    exit 1
+fi
