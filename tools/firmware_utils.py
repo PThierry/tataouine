@@ -50,6 +50,8 @@ def is_sig_token_used(encrypted_platform_bin_file):
     else:
         return True
 
+
+
 # DFU CRC32 function (for the DFU suffix)
 dfu_crc32_table = [
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,

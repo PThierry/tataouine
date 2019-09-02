@@ -2,6 +2,8 @@
 
 import math
 from Crypto.Cipher import AES
+from Crypto.Cipher import DES
+from Crypto.Cipher import DES3
 import hashlib, hmac
 
 from common_utils import *
@@ -137,6 +139,95 @@ class local_AES:
     @staticmethod
     def new(key, mode, iv=None, counter=None):
         return local_AES(key, mode, iv=iv, counter=counter)
+
+# Python 2/3 abstraction layer for DES
+class local_DES:
+    des = None
+    iv = None
+    def  __init__(self, key, mode, iv=None, counter=None):
+        key = str_encode(key)
+        if iv != None:
+            self.iv = iv
+            iv = str_encode(iv)
+            if mode == DES.MODE_CTR:
+                if counter == None:
+                    self.des = DES.new(key, mode, counter=self.counter_inc)
+                else:
+                    self.des = DES.new(key, mode, counter=counter)
+            else:
+                self.des = DES.new(key, mode, iv)
+            return
+        else:
+            if mode == DES.MODE_CTR:
+                if counter == None:
+                    self.iv = expand(inttostring(0), 64, "LEFT")
+                    self.des = DES.new(key, mode, counter=self.counter_inc)
+                else:
+                    self.des = DES.new(key, mode, counter=counter)
+            else:
+                self.des = DES.new(key, mode)
+            return
+    def counter_inc(self):
+        curr_iv = expand(inttostring((stringtoint(self.iv))), 64, "LEFT")
+        self.iv = expand(inttostring((stringtoint(self.iv)+1)), 64, "LEFT")
+        curr_iv = str_encode(curr_iv)
+        return curr_iv
+    def encrypt(self, data):
+        data = str_encode(data)
+        ret = str_decode(self.des.encrypt(data))
+        return ret
+    def decrypt(self, data):
+        data = str_encode(data)
+        ret = str_decode(self.des.decrypt(data))
+        return ret
+    @staticmethod
+    def new(key, mode, iv=None, counter=None):
+        return local_DES(key, mode, iv=iv, counter=counter)
+
+# Python 2/3 abstraction layer for Triple DES
+class local_DES3:
+    des3 = None
+    iv = None
+    def  __init__(self, key, mode, iv=None, counter=None):
+        key = str_encode(key)
+        if iv != None:
+            self.iv = iv
+            iv = str_encode(iv)
+            if mode == DES3.MODE_CTR:
+                if counter == None:
+                    self.des3 = DES3.new(key, mode, counter=self.counter_inc)
+                else:
+                    self.des3 = DES3.new(key, mode, counter=counter)
+            else:
+                self.des3 = DES3.new(key, mode, iv)
+            return
+        else:
+            if mode == DES3.MODE_CTR:
+                if counter == None:
+                    self.iv = expand(inttostring(0), 64, "LEFT")
+                    self.des3 = DES3.new(key, mode, counter=self.counter_inc)
+                else:
+                    self.des3 = DES3.new(key, mode, counter=counter)
+            else:
+                self.des3 = DES3.new(key, mode)
+            return
+    def counter_inc(self):
+        curr_iv = expand(inttostring((stringtoint(self.iv))), 64, "LEFT")
+        self.iv = expand(inttostring((stringtoint(self.iv)+1)), 64, "LEFT")
+        curr_iv = str_encode(curr_iv)
+        return curr_iv
+    def encrypt(self, data):
+        data = str_encode(data)
+        ret = str_decode(self.des3.encrypt(data))
+        return ret
+    def decrypt(self, data):
+        data = str_encode(data)
+        ret = str_decode(self.des3.decrypt(data))
+        return ret
+    @staticmethod
+    def new(key, mode, iv=None, counter=None):
+        return local_DES3(key, mode, iv=iv, counter=counter)
+
 
 # Python 2/3 abstraction layer for PBKDF2
 def local_pbkdf2_hmac(hash_func, pin, salt, pbkdf2_iterations):

@@ -12,51 +12,62 @@ from crypto_utils import *
 
 
 # Helper to communicate with the smartcard
-def _connect_to_token():
+def _connect_to_token(verbose=True):
     card = None
     try:
-        card = connect_to_smartcard()
+        card = connect_to_smartcard(verbose)
     except:
         card = None
     return card
 
 def connect_to_token(token_type=None):
-    card = _connect_to_token()
+    card = None
     while card == None:
         err_msg = "Error: Token undetected."
         if token_type != None:
             err_msg += " Please insert your '"+token_type+ "' token ..."
-        sys.stderr.write('\r'+err_msg)
-        sys.stderr.flush()
-        time.sleep(1)
-        card = _connect_to_token()
+        card = _connect_to_token(verbose=False)
+        if card == None:
+            sys.stderr.write('\r'+err_msg)
+            sys.stderr.flush()
+            time.sleep(1)
+        if card != None:
+            # Check if we have the proper applet
+            resp, sw1, sw2 = token_ins(token_type.lower(), "TOKEN_INS_SELECT_APPLET").send(card, verbose=False)
+            if (sw1 != 0x90) or (sw2 != 0x00):
+                sys.stderr.write('\r'+"Bad token inserted! Please insert the proper '"+token_type+"' token ...")
+                sys.stderr.flush()
+                time.sleep(1)
+                card = None
     return card
 
-# Helper to check the enctropy of a string
+# Helper to check the entropy of a string
 def check_pin_security_policy(instr):
     return True
 
 # Send an APDU using the smartcard library
-def send_apdu(cardservice, apdu):
+def send_apdu(cardservice, apdu, verbose=True):
     apdu = local_unhexlify(apdu)
     a = datetime.datetime.now()
     to_transmit = [ord(x) for x in apdu]
     response, sw1, sw2 = cardservice.connection.transmit(to_transmit)
     b = datetime.datetime.now()
     delta = b - a
-    print(">          "+local_hexlify(apdu))
-    print("<          SW1=%02x, SW2=%02x, %s" % (sw1, sw2, local_hexlify(''.join([chr(r) for r in response]))))
-    print("           |= APDU took %d ms" % (int(delta.total_seconds() * 1000)))
+    if verbose == True:
+        print(">          "+local_hexlify(apdu))
+        print("<          SW1=%02x, SW2=%02x, %s" % (sw1, sw2, local_hexlify(''.join([chr(r) for r in response]))))
+        print("           |= APDU took %d ms" % (int(delta.total_seconds() * 1000)))
     return "".join(map(chr, response)), sw1, sw2
 
 # Connect to a smartcard
-def connect_to_smartcard():
+def connect_to_smartcard(verbose=True):
     cardtype = AnyCardType()
     cardrequest = CardRequest(timeout=.2, cardType=cardtype)
     cardservice = cardrequest.waitforcard()
     cardservice.connection.connect()
     atr = cardservice.connection.getATR()
-    print("ATR: "+toHexString(atr))
+    if verbose == True:
+        print("ATR: "+toHexString(atr))
     return cardservice
 
 # Decrypt the local pet key using PBKDF2 using the external token
@@ -98,7 +109,7 @@ class APDU:
     data = None
     le   = None
     apdu_buf = None
-    def send(self, cardservice):
+    def send(self, cardservice, verbose=True):
         if (len(self.data) > 255) or (self.le > 256):
             print("APDU Error: data or Le too large")
             sys.exit(-1)
@@ -119,7 +130,7 @@ class APDU:
             else:
                 self.apdu_buf += '\x00'
         # Send the APDU through the communication channel
-        resp, sw1, sw2 = send_apdu(cardservice, local_hexlify(self.apdu_buf))
+        resp, sw1, sw2 = send_apdu(cardservice, local_hexlify(self.apdu_buf), verbose=verbose)
         return (resp, sw1, sw2)
     def __init__(self, cla, ins, p1, p2, data, le):
         self.cla  = cla
@@ -489,7 +500,13 @@ def token_full_unlock(card, token_type, local_keys_path, pet_pin = None, user_pi
     # Establish the secure channel with the token
     scp = SCP(card, local_keys_path, pet_pin, token_type)
     resp, sw1, sw2 = scp.token_unlock_pet_pin(pet_pin)
+    if (sw1 != 0x90) or (sw2 != 0x00):
+        print("\033[1;41m Error: PET pin seems wrong! Beware that only %d tries are allowed ...\033[1;m" % ord(resp[0]))
+        sys.exit(-1)
     resp, sw1, sw2 = scp.token_get_pet_name()
+    if (sw1 != 0x90) or (sw2 != 0x00):
+        print("\033[1;41m Error: something wrong happened when getting the PET name ...\033[1;m")
+        sys.exit(-1) 
     if force_pet_name_accept == False:
         answer = None
         while answer != "y" and answer != "n":
@@ -499,4 +516,8 @@ def token_full_unlock(card, token_type, local_keys_path, pet_pin = None, user_pi
     else:
         print("\033[1;44m PET NAME CHECK!  \033[1;m\n\nThe PET name for the "+token_type.upper()+" token is '"+resp+"' ...")
     resp, sw1, sw2 = scp.token_unlock_user_pin(user_pin)
+    if (sw1 != 0x90) or (sw2 != 0x00):
+        print("\033[1;41m Error: USER pin seems wrong! Beware that only %d tries are allowed ...\033[1;m" % ord(resp[0]))
+        sys.exit(-1)
+
     return scp
