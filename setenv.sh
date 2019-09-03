@@ -108,5 +108,4 @@ echo "========================================================="
 
 if test -z "$ADA_RUNTIME"; then
     echo "Invalid ADA_RUNTIME! Please check that your Ada toolchain binaries are in your PATH"
-    exit 1
 fi
