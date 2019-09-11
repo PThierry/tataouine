@@ -184,8 +184,8 @@ if __name__ == '__main__':
     else:
         # Generate random
         sig_session_iv = gen_rand_string(16)
-        # Compute the HMAC, and concatenate them
-        hm = local_hmac.new(dec_firmware_sig_sym_key_data, digestmod=hashlib.sha256)
+        # Compute the HMAC, and concatenate them, HMAC key is first 32 bytes of master key
+        hm = local_hmac.new(dec_firmware_sig_sym_key_data[:32], digestmod=hashlib.sha256)
         hm.update(header + firmware_chunk_size_str + sig_session_iv + sig)
         sig_session_iv += hm.digest()
 
@@ -215,7 +215,7 @@ if __name__ == '__main__':
                 print("Error:  SIG token APDU error ...")
                 sys.exit(-1)
         else:
-            aes_cbc_ctx = local_AES.new(dec_firmware_sig_sym_key_data[:16], AES.MODE_CBC, iv=dec_firmware_sig_sym_key_data[16:])
+            aes_cbc_ctx = local_AES.new(dec_firmware_sig_sym_key_data[32:32+16], AES.MODE_CBC, iv=dec_firmware_sig_sym_key_data[32+16:])
             chunk_key = aes_cbc_ctx.encrypt(local_key_to_derive)
 
             # Increment the session iv

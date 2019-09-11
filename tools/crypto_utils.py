@@ -299,8 +299,8 @@ def decrypt_platform_data(encrypted_platform_bin_file, pin, data_type, override_
     if (len(data) > index):
         firmware_sig_priv_key_data = data[index:index+35]
         index += 35
-        firmware_sig_sym_key_data = data[index:index+32]
-        index += 32
+        firmware_sig_sym_key_data = data[index:index+64]
+        index += 64
         encrypted_local_pet_key_data = data[index:index+64]
         index += 64
     # Derive the decryption key

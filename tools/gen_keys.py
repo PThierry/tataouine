@@ -214,7 +214,7 @@ if __name__ == '__main__':
     ## Master encryption key in the AUTH token
     save_in_file(gen_rand_string(32), AUTH_TOKEN_PATH+"/master_symmetric_auth_key.bin")
     ## Master firmware encryption key shared between the DFU and SIG tokens
-    shared_master_dfu_sig = gen_rand_string(32)
+    shared_master_dfu_sig = gen_rand_string(64)
     save_in_file(shared_master_dfu_sig, DFU_TOKEN_PATH+"/master_symmetric_dfu_key.bin")
     save_in_file(shared_master_dfu_sig, SIG_TOKEN_PATH+"/master_symmetric_sig_key.bin") 
     # Save salts
