@@ -176,7 +176,10 @@ quiet_cmd_distclean     = DISTCLEAN
 
 # about menuconfig, oldconfig and so on...
 quiet_cmd_menuconfig    = MENUCONFIG
-      cmd_menuconfig    = $(MCONF) Kconfig
+      cmd_menuconfig    = $(MCONF) Kconfig;
+	
+quiet_cmd_update_autoconf = UPDATE_AUTOCFG
+      cmd_update_autoconf = $(CONF) $(CONF_AUTO_ARGS) Kconfig
 
 quiet_cmd_mkincludedir  = MKINCLUDEDIR
       cmd_mkincludedir  = mkdir -p $(PWD)/include && mkdir -p $(PWD)/include/config $(PWD)/include/generated

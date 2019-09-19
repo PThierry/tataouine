@@ -355,6 +355,7 @@ ifeq (, $(shell which kconfig-conf))
 MCONF            ?= menuconfig
 CONF             ?= olddefconfig
 CONF_ARGS        ?=
+CONF_AUTO_ARGS   ?=
 CONFGEN          ?= genconfig
 CONFGEN_ARGS     ?= --header-path include/generated/autoconf.h
 else
@@ -362,6 +363,7 @@ else
 MCONF            ?= kconfig-mconf
 CONF             ?= kconfig-conf
 CONF_ARGS        ?= --olddefconfig
+CONF_AUTO_ARGS   ?= --silentoldconfig
 CONFGEN          ?= true
 CONFGEN_ARGS     ?=
 endif

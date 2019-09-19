@@ -127,6 +127,7 @@ menuconfig: check-env
 	$(call cmd,mkincludedir)
 	$(call cmd,prepareada)
 	$(call cmd,menuconfig)
+	$(call cmd,update_autoconf)
 	$(call cmd,mkobjlist_libs)
 	$(call cmd,mkobjlist_apps)
 	$(call cmd,mkobjlist_drvs)
