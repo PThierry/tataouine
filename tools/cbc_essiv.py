@@ -9,16 +9,23 @@ from crypto_utils import *
 
 def PrintUsage():
     executable = os.path.basename(__file__)
-    print("Error when executing %s\n\tUsage:\t%s keys_path algorithm=<AES|TDES> direction=<enc|dec> sector_size=<512|1024|2048|4096> secto_start_num file master_key" % (executable, executable))
+    print("Error when executing %s\n\tUsage:\t%s keys_path algorithm=<AES|TDES> direction=<enc|dec> sector_size=<512|1024|2048|4096> sector_start_num SD_diverse file <master_key>" % (executable, executable))
+    print("SD_diverse = SD card CID information in hex (CID register value obtained with command 2, on 128 bits as per SD standard). If SD_diverse=0, this will print more help to get it.")
+    print("<master_key> = optional master key on 32 bytes (256 bits). If not provided, we use the AUTH token to get it")
     sys.exit(-1)
 
-def derive_essiv_iv(key, sector_num, algo):
+def derive_essiv_iv(key, sector_num, algo, SD_driverse):
+    # Sanity check
+    if len(SD_driverse) != 16:
+        print("Bad SD CID length %d" % len(SD_driverse))
+        sys.exit(-1)
+    (hash_SD, _, _) = local_sha256(SD_diverse)    
     if algo == "AES":
-        sector_str = expand(inttostring(sector_num), 32, "LEFT") + "\x00"*(16-4)
+        sector_str = expand(inttostring(sector_num), 32, "LEFT") + hash_SD[:(16-4)]
         aes = local_AES.new(key, AES.MODE_ECB)
         return aes.encrypt(sector_str)
     elif algo == "TDES":
-        sector_str = expand(inttostring(sector_num), 32, "LEFT") + "\x00"*(8-4)
+        sector_str = expand(inttostring(sector_num), 32, "LEFT") + hash_SD[:(8-4)]
         tdes = local_DES3.new(key[:24], DES3.MODE_ECB)
         return tdes.encrypt(sector_str)
     else:
@@ -29,17 +36,19 @@ if __name__ == '__main__':
     # Register Ctrl+C handler
     signal.signal(signal.SIGINT, handler)
     # Get the arguments
-    if len(sys.argv) < 7:
+    if len(sys.argv) < 8:
         PrintUsage()
     keys_path = sys.argv[1]
     algorithm = sys.argv[2]
     direction = sys.argv[3]
     sector_size = int(sys.argv[4])
     sector_start = int(sys.argv[5])
-    in_file = sys.argv[6]
+    sector_start = int(sys.argv[6])
+    SD_diverse = sys.argv[6]
+    in_file = sys.argv[7]
     master_key = None
-    if len(sys.argv) == 8:
-        master_key = sys.argv[7]
+    if len(sys.argv) == 9:
+        master_key = sys.argv[8]
     if direction != "enc" and direction != "dec":
         print("Error: provided direction %s is not OK (must be 'enc' or 'dec')!" % direction)
         sys.exit(-1)
@@ -51,6 +60,23 @@ if __name__ == '__main__':
         print("Error: file %s size %d is not a multiple of sector size %d!" % (in_file, file_size, sector_size))
         sys.exit(-1)
    
+    # SD diversifier is either 128 bit long (i.e. 32 hex bytes), or 0 to tell that we need help to get it
+    if SD_diverse == "0":
+        # Explain how to get CID
+        print("In order to get the CID of your SD card, please use a real SD card reader (USB to SD will not work as they")
+        print("only show a mass storage device with no advanced SDIO capabilities). Once done, perform the following:")
+        print("    - Under Linux: execute 'cat /sys/bus/mmc/devices/mmc0\:0007/cid' while adapting the mmc device. This")
+        print("      should print a 128-bit value in hexadecimal (32 hexadecimal characters).")
+        print("    - Under other OSes: the CID might appear in the peripherals panel details, or dedicated software can")
+        print("      be used to retrieve it.")
+        sys.exit(-1)
+    else:
+        if len(SD_diverse) != 32:
+            print("Error: provided CID %s of size %d is not proper hex (must be 128 bits, i.e. 32 hex bytes)!" % (SD_diverse, len(SD_diverse)))
+            sys.exit(-1)
+        # Get binary from input
+        SD_diverse = local_unhexlify(SD_diverse)
+
     if master_key == None:
         from token_utils import *  
         # Get the main encryption key
@@ -85,7 +111,7 @@ if __name__ == '__main__':
         # Read the sector
         sector = in_fd.read(sector_size)
         # Derive the IV
-        iv = derive_essiv_iv(master_key[32:], s, algorithm)
+        iv = derive_essiv_iv(master_key[32:], s, algorithm, SD_diverse)
 	# Encrypt or decrypt the sector
         if algorithm == "AES":
             crypto = local_AES.new(master_key[:32], AES.MODE_CBC, iv=iv)
