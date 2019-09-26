@@ -1,0 +1,6 @@
+set architecture arm
+target extended-remote localhost:3333
+source tools/rdplock/svd_dump.py
+svd_load_file tools/rdplock/STM32F429.svd
+svd_show/x FLASH OPTKEYR
+svd_show/x FLASH OPTCR
