@@ -793,10 +793,6 @@ javacard_push_auth:
 javacard_push_dfu:
 	@cd javacard && make push_dfu
 
-javacard_purge:
-	@cd javacard && make purge_applets
-
-
 ifeq ("$(USE_SIG_TOKEN)","USE_SIG_TOKEN")
 javacard_push_sig:
 	@cd javacard && make push_sig
