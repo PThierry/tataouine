@@ -21,23 +21,22 @@ KEY2HEADER       = $(PROJ_FILES)/tools/key2header.py
 ##########################################
 ##### Libecc cryptographic library
 
-external_java_targets :=
-external_libs_targets :=
+external_targets :=
 
 ifeq ($(CONFIG_USR_LIB_SIGN),y)
-external_libs_targets += libsign $(EC_UTILS)
+external_targets += libsign $(EC_UTILS)
 endif
 
 ifeq ($(CONFIG_EXT_GP_PRO),y)
-external_java_targets += gp
+external_targets += gp
 endif
 
 ifeq ($(CONFIG_EXT_ANT_JAVACARD),y)
-external_java_targets += antjavacard
+external_targets += antjavacard
 endif
 
 ifeq ($(CONFIG_EXT_SECAES),y)
-external_libs_targets += secaes
+external_targets += secaes
 endif
 
 ifeq ($(USE_LLVM),y)
@@ -46,11 +45,7 @@ else
 HOST_CC=gcc
 endif
 
-all: java libs
-
-java: $(external_java_targets)
-
-libs: $(external_libs_targets)
+all: $(external_targets)
 
 gp:
 	if test ! -f $(PROJ_FILES)/javacard/applet/gp.jar; then \
