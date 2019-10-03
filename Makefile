@@ -777,7 +777,7 @@ verify: verify_check $(call all_verify_rules_fn, $(toverify))
 #
 #
 
-javacard_compile: externals_java
+javacard_compile:
 	@cd javacard && make applet_auth
 	@cd javacard && make applet_dfu
 ifeq ("$(USE_SIG_TOKEN)","USE_SIG_TOKEN")
@@ -803,7 +803,7 @@ javacard_push: javacard_push_auth javacard_push_dfu
 endif
 
 
-javacard: javacard_compile javacard_push
+javacard: externals_java javacard_compile javacard_push
 
 externals_java:
 	@make -C externals java
