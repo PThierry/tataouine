@@ -58,3 +58,38 @@ define get_rdp
 	svd_show/x FLASH OPTCR RDP
 	shell echo "NOTE: RDP=aa means RDP0, RDP=CC means RDP2, everything else means RDP1"
 end
+
+
+define check_firmware
+    if $argc != 1
+        help flash_and_lock
+    else
+        monitor flash verify_bank 0 $arg0 0x0
+    end
+end
+document check_firmware
+Syntax: check_firmware BINFILE
+| Check that flashed firmware checksum correspond to the file given in argument
+end
+
+
+define flash_and_lock
+    if $argc != 1
+        help flash_and_lock
+    else
+        load_svd
+        target remote 127.0.0.1:3333
+        monitor reset halt
+        monitor flash write_image erase $arg0
+        monitor reset halt
+        check_firmware $arg0
+	    svd_confirm "Does the firmware match?"
+        #go_rdp2
+        monitor reset halt
+    end
+end
+document flash_and_lock
+Syntax: flash_and_lock BINFILE
+| Flash device and lock RDP2 field.
+end
+
